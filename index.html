@@ -42,7 +42,7 @@
         }
 
         .bg-image.active {
-            opacity: 1;
+            opacity: 1; /* Полная яркость для фоновых картинок */
         }
 
         .main-container {
@@ -81,7 +81,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.75;
+            opacity: 0.75; /* Прозрачность гифки 75% */
         }
 
         .title {
@@ -106,7 +106,7 @@
             flex-direction: column; 
             align-items: center;
             justify-content: flex-start;
-            overflow: hidden;
+            overflow-y: hidden;
         }
 
         .log-item {
@@ -118,10 +118,9 @@
             transform: translateY(-10px);
             opacity: 0;
             text-align: center;
-            max-width: 90%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            max-width: 95%;
+            word-wrap: break-word;
+            word-break: break-all;
             text-shadow: 0 1px 4px rgba(0,0,0,0.8);
         }
 
@@ -151,7 +150,7 @@
         <div class="loader-logs" id="logsContainer"></div>
     </div>
 
-    <audio id="loadingMusic" autoplay loop></audio>
+    <audio id="loadingMusic" autoplay></audio>
 
     <script>
         const images = [
@@ -178,7 +177,6 @@
         const bgElements = document.querySelectorAll('.bg-image');
         let currentImgIndex = 0;
 
-        // Безопасное переключение картинок без зависания цикла while
         setInterval(() => {
             if (bgElements.length <= 1) return;
             bgElements[currentImgIndex].classList.remove('active');
@@ -195,23 +193,34 @@
         }, 5000);
 
         const audioPlayer = document.getElementById('loadingMusic');
-        audioPlayer.volume = 0.04; // Громкость 4%
+        audioPlayer.volume = 0.04;
         
-        let currentSongIndex = Math.floor(Math.random() * songs.length);
+        let currentSongIndex = -1;
         let musicStarted = false;
 
-        function playNextSong() {
+        function playRandomSong() {
+            if (songs.length === 0) return;
+
+            let nextSongIndex = Math.floor(Math.random() * songs.length);
+            
+            if (songs.length > 1) {
+                while (nextSongIndex === currentSongIndex) {
+                    nextSongIndex = Math.floor(Math.random() * songs.length);
+                }
+            }
+            
+            currentSongIndex = nextSongIndex;
             audioPlayer.src = songs[currentSongIndex];
+            
             audioPlayer.play().then(() => {
                 musicStarted = true;
             }).catch(error => {
-                console.log("Ожидание триггера для музыки...");
+                console.log("Ожидание триггера активности для музыки...");
             });
-            currentSongIndex = (currentSongIndex + 1) % songs.length;
         }
 
-        audioPlayer.addEventListener('ended', playNextSong);
-        playNextSong();
+        audioPlayer.addEventListener('ended', playRandomSong);
+        playRandomSong();
 
         function forceStartMusic() {
             if (!musicStarted) {
@@ -255,7 +264,6 @@
             }
         }
 
-        // Интеграция с Garry's Mod API
         function SetStatusChanged(status) {
             if(status) addLog(status);
         }
@@ -271,7 +279,6 @@
             }
         }
 
-        // Демо-логи для проверки в обычном браузере
         if (!navigator.userAgent.includes("Valve")) {
             const demoStages = [];
             for (let i = 1; i <= 99; i++) {
@@ -280,7 +287,7 @@
             demoStages.push("YUPPY!: 100");
 
             demoStages.forEach((msg, i) => {
-                setTimeout(() => { addLog(msg); }, i * 150 + 100); // Немного ускорил вывод демо-логов
+                setTimeout(() => { addLog(msg); }, i * 150 + 100);
             });
         }
     </script>
