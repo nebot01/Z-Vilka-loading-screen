@@ -55,7 +55,7 @@
 
         .content-box {
             position: absolute;
-            top: 40%; /* Сместили блок выше, освобождая место под массивный список */
+            top: 42%; /* Сместили контент чуть выше, давая столбцу логов больше места */
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
@@ -94,13 +94,13 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
 
-        /* Увеличенный контейнер для вывода глубокой истории */
+        /* Возвращён классический способ позиционирования */
         .loader-logs {
             position: absolute;
-            top: calc(40% + 140px); /* Привязка строго под сместившимся контентом */
+            top: calc(42% + 140px); /* Чётко следует за контентом сверху */
             left: 50%;
             transform: translateX(-50%);
-            bottom: 15px; 
+            bottom: 20px; 
             width: 100%;
             max-width: 750px;
             display: flex;
@@ -111,16 +111,18 @@
         }
 
         .log-item {
+            display: block; /* Безопасно для рендера GMod при переносе строк */
             font-size: 16px;
             font-weight: 500;
             color: #ffffff;
-            margin: 4px 0; 
+            margin: 5px 0; 
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, scale 0.3s ease-in-out;
             transform: translateY(-10px);
             opacity: 0;
             text-align: center;
             max-width: 95%;
             
+            /* Перенос длинных названий файлов без багов */
             white-space: normal;
             word-wrap: break-word;
             word-break: break-all;
@@ -133,15 +135,14 @@
             opacity: 1;
         }
 
-        /* Плавный градиент прозрачности вниз по списку истории */
+        /* Плавное затухание истории логов вглубь экрана */
         .log-item:nth-child(1) { opacity: 1; transform: scale(1); }
-        .log-item:nth-child(2) { opacity: 0.75; transform: scale(0.98); }
-        .log-item:nth-child(3) { opacity: 0.55; transform: scale(0.96); }
-        .log-item:nth-child(4) { opacity: 0.35; transform: scale(0.94); }
-        .log-item:nth-child(5) { opacity: 0.20; transform: scale(0.92); }
-        .log-item:nth-child(6) { opacity: 0.10; transform: scale(0.90); }
-        .log-item:nth-child(7) { opacity: 0.05; transform: scale(0.88); }
-        .log-item:nth-child(n+8) { opacity: 0.02; transform: scale(0.85); }
+        .log-item:nth-child(2) { opacity: 0.70; transform: scale(0.97); }
+        .log-item:nth-child(3) { opacity: 0.45; transform: scale(0.94); }
+        .log-item:nth-child(4) { opacity: 0.25; transform: scale(0.91); }
+        .log-item:nth-child(5) { opacity: 0.10; transform: scale(0.88); }
+        .log-item:nth-child(6) { opacity: 0.04; transform: scale(0.85); }
+        .log-item:nth-child(n+7) { opacity: 0; transform: scale(0.80); }
     </style>
 </head>
 <body>
@@ -264,11 +265,12 @@
             logItem.className = 'log-item';
             logItem.innerText = text;
 
+            // Новые элементы вставляются строго наверх
             logsContainer.insertBefore(logItem, logsContainer.firstChild);
             setTimeout(() => { logItem.classList.add('spawn'); }, 15);
 
-            // Увеличили лимит удержания истории до 25 элементов, чтобы старые логи не удалялись слишком рано
-            if (logsContainer.children.length > 25) {
+            // Увеличили лимит удержания истории в буфере до 20 элементов
+            if (logsContainer.children.length > 20) {
                 logsContainer.removeChild(logsContainer.lastChild);
             }
         }
@@ -288,6 +290,7 @@
             }
         }
 
+        // Тестовый режим с Кириллами активен для локальных тестов
         if (!navigator.userAgent.includes("Valve")) {
             const demoStages = [];
             for (let i = 1; i <= 99; i++) {
