@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Nikker going to your house</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #050505;
+            color: #fff;
+            user-select: none;
+        }
+
+        #bgSlider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .bg-image.active {
+            opacity: 1;
+        }
+
+        .main-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%);
+        }
+
+        .content-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 3;
+        }
+
+        .gif-container {
+            width: 240px;
+            height: 180px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .gif-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.75; /* Сделал гифку прозрачной на 35%, чтобы она не перекрывала фон */
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .loader-logs {
+            position: absolute;
+            top: calc(50% + 140px); 
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 20px; 
+            width: 100%;
+            max-width: 700px;
+            display: flex;
+            flex-direction: column; 
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+
+        .log-item {
+            font-size: 16px;
+            font-weight: 500;
+            color: #ffffff;
+            margin: 5px 0;
+            transition: all 0.3s ease-in-out;
+            transform: translateY(-10px);
+            opacity: 0;
+            text-align: center;
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+        }
+
+        .log-item.spawn {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .log-item:nth-child(2) { opacity: 0.60; transform: scale(0.95); }
+        .log-item:nth-child(3) { opacity: 0.35; transform: scale(0.90); }
+        .log-item:nth-child(4) { opacity: 0.15; transform: scale(0.85); }
+        .log-item:nth-child(5) { opacity: 0.05; transform: scale(0.80); }
+        .log-item:nth-child(n+6) { opacity: 0; transform: scale(0.75); }
+    </style>
+</head>
+<body>
+
+    <div class="background-slider" id="bgSlider"></div>
+
+    <div class="main-container">
+        
+        <div class="content-box">
+            <div class="gif-container">
+                <img src="ecospace-compostable.gif" alt="Z-Вилка GIF">
+            </div>
+            <h1 class="title">Z-Вилка</h1>
+        </div>
+
+        <div class="loader-logs" id="logsContainer"></div>
+        
+    </div>
+
+    <audio id="loadingMusic" autoplay loop></audio>
+
+    <script>
+        const images = [
+            'nikker1.png',
+            'nikker2.png',
+            'nikker3.png'
+        ];
+
+        const songs = [
+            'nikker1.mp3',
+            'nikker2.mp3',
+            'nikker3.mp3',
+            'nikker4.mp3'
+        ];
+
+        const bgSlider = document.getElementById('bgSlider');
+        images.forEach((src, idx) => {
+            const div = document.createElement('div');
+            div.className = `bg-image ${idx === 0 ? 'active' : ''}`;
+            div.style.backgroundImage = `url('${src}')`;
+            bgSlider.appendChild(div);
+        });
+
+        const bgElements = document.querySelectorAll('.bg-image');
+        let currentImgIndex = 0;
+
+        setInterval(() => {
+            bgElements[currentImgIndex].classList.remove('active');
+            let nextIndex = currentImgIndex;
+            while (nextIndex === currentImgIndex && images.length > 1) {
+                nextIndex = Math.floor(Math.random() * images.length);
+            }
+            currentImgIndex = nextIndex;
+            bgElements[currentImgIndex].classList.add('active');
+        }, 5000);
+
+        const audioPlayer = document.getElementById('loadingMusic');
+        audioPlayer.volume = 0.04;
+        
+        let currentSongIndex = Math.floor(Math.random() * songs.length);
+        let musicStarted = false;
+
+        function playNextSong() {
+            audioPlayer.src = songs[currentSongIndex];
+            audioPlayer.play().then(() => {
+                musicStarted = true;
+            }).catch(error => {
+                console.log("Ожидание активности для старта музыки...");
+            });
+            currentSongIndex = (currentSongIndex + 1) % songs.length;
+        }
+
+        audioPlayer.addEventListener('ended', playNextSong);
+        playNextSong();
+
+        function forceStartMusic() {
+            if (!musicStarted) {
+                audioPlayer.play().then(() => {
+                    musicStarted = true;
+                    removeTriggers();
+                }).catch(() => {});
+            }
+        }
+
+        function removeTriggers() {
+            window.removeEventListener('click', forceStartMusic);
+            window.removeEventListener('mousemove', forceStartMusic);
+            window.removeEventListener('keydown', forceStartMusic);
+            document.removeEventListener('DOMContentLoaded', forceStartMusic);
+        }
+
+        window.addEventListener('click', forceStartMusic);
+        window.addEventListener('mousemove', forceStartMusic);
+        window.addEventListener('keydown', forceStartMusic);
+        document.addEventListener('DOMContentLoaded', forceStartMusic);
+
+        const logsContainer = document.getElementById('logsContainer');
+        let lastLogText = "";
+
+        function addLog(text) {
+            forceStartMusic();
+
+            if (!text || text === lastLogText) return; 
+            lastLogText = text;
+
+            const logItem = document.createElement('div');
+            logItem.className = 'log-item';
+            logItem.innerText = text;
+
+            logsContainer.insertBefore(logItem, logsContainer.firstChild);
+
+            setTimeout(() => { logItem.classList.add('spawn'); }, 15);
+
+            if (logsContainer.children.length > 12) {
+                logsContainer.removeChild(logsContainer.lastChild);
+            }
+        }
+
+        // Интеграция с Garry's Mod API
+        function SetStatusChanged(status) {
+            if(status) addLog(status);
+        }
+
+        function DownloadingFile(fileName) {
+            let cleanName = fileName.replace(/["']/g, "");
+            addLog("Downloading: " + cleanName);
+        }
+
+        function SetFilesRemaining(needed) {
+            if (needed > 0) {
+                addLog("Files remaining: " + needed);
+            }
+        }
+
+        if (!navigator.userAgent.includes("Valve")) {
+            const demoStages = [
+                "Dead kirill Udins: 1",
+                "Dead kirill Udins: 2",
+                "Dead kirill Udins: 3",
+                "Dead kirill Udins: 4",
+                "Dead kirill Udins: 5",
+                "Dead kirill Udins: 6",
+                "Dead kirill Udins: 7",
+                "Dead kirill Udins: 8",
+                "Dead kirill Udins: 9",
+                "Dead kirill Udins: 10",
+                "Dead kirill Udins: 11",
+                "Dead kirill Udins: 12",
+                "Dead kirill Udins: 13",
+                "Dead kirill Udins: 14",
+                "Dead kirill Udins: 15",
+                "Dead kirill Udins: 16",
+                "Dead kirill Udins: 17",
+                "Dead kirill Udins: 18",
+                "Dead kirill Udins: 19",
+                "Dead kirill Udins: 20",
+                "Dead kirill Udins: 21",
+                "Dead kirill Udins: 22",
+                "Dead kirill Udins: 23",
+                "Dead kirill Udins: 24",
+                "Dead kirill Udins: 25",
+                "Dead kirill Udins: 26",
+                "Dead kirill Udins: 27",
+                "Dead kirill Udins: 28",
+                "Dead kirill Udins: 29",
+                "Dead kirill Udins: 30",
+                "Dead kirill Udins: 31",
+                "Dead kirill Udins: 32",
+                "Dead kirill Udins: 33",
+                "Dead kirill Udins: 34",
+                "Dead kirill Udins: 35",
+                "Dead kirill Udins: 36",
+                "Dead kirill Udins: 37",
+                "Dead kirill Udins: 38",
+                "Dead kirill Udins: 39",
+                "Dead kirill Udins: 40",
+                "Dead kirill Udins: 41",
+                "Dead kirill Udins: 42",
+                "Dead kirill Udins: 43",
+                "Dead kirill Udins: 44",
+                "Dead kirill Udins: 45",
+                "Dead kirill Udins: 46",
+                "Dead kirill Udins: 47",
+                "Dead kirill Udins: 48",
+                "Dead kirill Udins: 49",
+                "Dead kirill Udins: 50",
+                "Dead kirill Udins: 51",
+                "Dead kirill Udins: 52",
+                "Dead kirill Udins: 53",
+                "Dead kirill Udins: 54",
+                "Dead kirill Udins: 55",
+                "Dead kirill Udins: 56",
+                "Dead kirill Udins: 57",
+                "Dead kirill Udins: 58",
+                "Dead kirill Udins: 59",
+                "Dead kirill Udins: 60",
+                "Dead kirill Udins: 61",
+                "Dead kirill Udins: 62",
+                "Dead kirill Udins: 63",
+                "Dead kirill Udins: 64",
+                "Dead kirill Udins: 65",
+                "Dead kirill Udins: 66",
+                "Dead kirill Udins: 67",
+                "Dead kirill Udins: 68",
+                "Dead kirill Udins: 69",
+                "Dead kirill Udins: 70",
+                "Dead kirill Udins: 71",
+                "Dead kirill Udins: 72",
+                "Dead kirill Udins: 73",
+                "Dead kirill Udins: 74",
+                "Dead kirill Udins: 75",
+                "Dead kirill Udins: 76",
+                "Dead kirill Udins: 77",
+                "Dead kirill Udins: 78",
+                "Dead kirill Udins: 79",
+                "Dead kirill Udins: 80",
+                "Dead kirill Udins: 81",
+                "Dead kirill Udins: 82",
+                "Dead kirill Udins: 83",
+                "Dead kirill Udins: 84",
+                "Dead kirill Udins: 85",
+                "Dead kirill Udins: 86",
+                "Dead kirill Udins: 87",
+                "Dead kirill Udins: 88",
+                "Dead kirill Udins: 89",
+                "Dead kirill Udins: 90",
+                "Dead kirill Udins: 91",
+                "Dead kirill Udins: 92",
+                "Dead kirill Udins: 93",
+                "Dead kirill Udins: 94",
+                "Dead kirill Udins: 95",
+                "Dead kirill Udins: 96",
+                "Dead kirill Udins: 97",
+                "Dead kirill Udins: 98",
+                "Dead kirill Udins: 99",
+                "YUPPY!: 100",
+            ];
+            demoStages.forEach((msg, i) => {
+                setTimeout(() => { addLog(msg); }, i * 1400 + 500);
+            });
+        }
+    </script>
+</body>
+</html>
