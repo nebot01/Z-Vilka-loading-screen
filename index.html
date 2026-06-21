@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Nikker going to your house</title>
+    <title>Z-Вилка Loading Screen</title>
     <style>
         * {
             box-sizing: border-box;
@@ -42,7 +42,7 @@
         }
 
         .bg-image.active {
-            opacity: 1;
+            opacity: 0.35; /* Ограничил прозрачность фонов, чтобы они не перекрывали интерфейс */
         }
 
         .main-container {
@@ -81,7 +81,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.75; /* Сделал гифку прозрачной на 35%, чтобы она не перекрывала фон */
+            opacity: 0.35; /* Полностью прозрачная гифка, чтобы видеть скрины */
         }
 
         .title {
@@ -142,16 +142,13 @@
     <div class="background-slider" id="bgSlider"></div>
 
     <div class="main-container">
-        
         <div class="content-box">
             <div class="gif-container">
                 <img src="ecospace-compostable.gif" alt="Z-Вилка GIF">
             </div>
             <h1 class="title">Z-Вилка</h1>
         </div>
-
         <div class="loader-logs" id="logsContainer"></div>
-        
     </div>
 
     <audio id="loadingMusic" autoplay loop></audio>
@@ -181,18 +178,24 @@
         const bgElements = document.querySelectorAll('.bg-image');
         let currentImgIndex = 0;
 
+        // Безопасное переключение картинок без зависания цикла while
         setInterval(() => {
+            if (bgElements.length <= 1) return;
             bgElements[currentImgIndex].classList.remove('active');
-            let nextIndex = currentImgIndex;
-            while (nextIndex === currentImgIndex && images.length > 1) {
-                nextIndex = Math.floor(Math.random() * images.length);
+            
+            let nextIndex = Math.floor(Math.random() * images.length);
+            if (nextIndex === currentImgIndex) {
+                nextIndex = (currentImgIndex + 1) % images.length;
             }
+            
             currentImgIndex = nextIndex;
-            bgElements[currentImgIndex].classList.add('active');
+            if (bgElements[currentImgIndex]) {
+                bgElements[currentImgIndex].classList.add('active');
+            }
         }, 5000);
 
         const audioPlayer = document.getElementById('loadingMusic');
-        audioPlayer.volume = 0.04;
+        audioPlayer.volume = 0.04; // Громкость 4%
         
         let currentSongIndex = Math.floor(Math.random() * songs.length);
         let musicStarted = false;
@@ -202,7 +205,7 @@
             audioPlayer.play().then(() => {
                 musicStarted = true;
             }).catch(error => {
-                console.log("Ожидание активности для старта музыки...");
+                console.log("Ожидание триггера для музыки...");
             });
             currentSongIndex = (currentSongIndex + 1) % songs.length;
         }
@@ -245,7 +248,6 @@
             logItem.innerText = text;
 
             logsContainer.insertBefore(logItem, logsContainer.firstChild);
-
             setTimeout(() => { logItem.classList.add('spawn'); }, 15);
 
             if (logsContainer.children.length > 12) {
@@ -269,111 +271,16 @@
             }
         }
 
+        // Демо-логи для проверки в обычном браузере
         if (!navigator.userAgent.includes("Valve")) {
-            const demoStages = [
-                "Dead kirill Udins: 1",
-                "Dead kirill Udins: 2",
-                "Dead kirill Udins: 3",
-                "Dead kirill Udins: 4",
-                "Dead kirill Udins: 5",
-                "Dead kirill Udins: 6",
-                "Dead kirill Udins: 7",
-                "Dead kirill Udins: 8",
-                "Dead kirill Udins: 9",
-                "Dead kirill Udins: 10",
-                "Dead kirill Udins: 11",
-                "Dead kirill Udins: 12",
-                "Dead kirill Udins: 13",
-                "Dead kirill Udins: 14",
-                "Dead kirill Udins: 15",
-                "Dead kirill Udins: 16",
-                "Dead kirill Udins: 17",
-                "Dead kirill Udins: 18",
-                "Dead kirill Udins: 19",
-                "Dead kirill Udins: 20",
-                "Dead kirill Udins: 21",
-                "Dead kirill Udins: 22",
-                "Dead kirill Udins: 23",
-                "Dead kirill Udins: 24",
-                "Dead kirill Udins: 25",
-                "Dead kirill Udins: 26",
-                "Dead kirill Udins: 27",
-                "Dead kirill Udins: 28",
-                "Dead kirill Udins: 29",
-                "Dead kirill Udins: 30",
-                "Dead kirill Udins: 31",
-                "Dead kirill Udins: 32",
-                "Dead kirill Udins: 33",
-                "Dead kirill Udins: 34",
-                "Dead kirill Udins: 35",
-                "Dead kirill Udins: 36",
-                "Dead kirill Udins: 37",
-                "Dead kirill Udins: 38",
-                "Dead kirill Udins: 39",
-                "Dead kirill Udins: 40",
-                "Dead kirill Udins: 41",
-                "Dead kirill Udins: 42",
-                "Dead kirill Udins: 43",
-                "Dead kirill Udins: 44",
-                "Dead kirill Udins: 45",
-                "Dead kirill Udins: 46",
-                "Dead kirill Udins: 47",
-                "Dead kirill Udins: 48",
-                "Dead kirill Udins: 49",
-                "Dead kirill Udins: 50",
-                "Dead kirill Udins: 51",
-                "Dead kirill Udins: 52",
-                "Dead kirill Udins: 53",
-                "Dead kirill Udins: 54",
-                "Dead kirill Udins: 55",
-                "Dead kirill Udins: 56",
-                "Dead kirill Udins: 57",
-                "Dead kirill Udins: 58",
-                "Dead kirill Udins: 59",
-                "Dead kirill Udins: 60",
-                "Dead kirill Udins: 61",
-                "Dead kirill Udins: 62",
-                "Dead kirill Udins: 63",
-                "Dead kirill Udins: 64",
-                "Dead kirill Udins: 65",
-                "Dead kirill Udins: 66",
-                "Dead kirill Udins: 67",
-                "Dead kirill Udins: 68",
-                "Dead kirill Udins: 69",
-                "Dead kirill Udins: 70",
-                "Dead kirill Udins: 71",
-                "Dead kirill Udins: 72",
-                "Dead kirill Udins: 73",
-                "Dead kirill Udins: 74",
-                "Dead kirill Udins: 75",
-                "Dead kirill Udins: 76",
-                "Dead kirill Udins: 77",
-                "Dead kirill Udins: 78",
-                "Dead kirill Udins: 79",
-                "Dead kirill Udins: 80",
-                "Dead kirill Udins: 81",
-                "Dead kirill Udins: 82",
-                "Dead kirill Udins: 83",
-                "Dead kirill Udins: 84",
-                "Dead kirill Udins: 85",
-                "Dead kirill Udins: 86",
-                "Dead kirill Udins: 87",
-                "Dead kirill Udins: 88",
-                "Dead kirill Udins: 89",
-                "Dead kirill Udins: 90",
-                "Dead kirill Udins: 91",
-                "Dead kirill Udins: 92",
-                "Dead kirill Udins: 93",
-                "Dead kirill Udins: 94",
-                "Dead kirill Udins: 95",
-                "Dead kirill Udins: 96",
-                "Dead kirill Udins: 97",
-                "Dead kirill Udins: 98",
-                "Dead kirill Udins: 99",
-                "YUPPY!: 100",
-            ];
+            const demoStages = [];
+            for (let i = 1; i <= 99; i++) {
+                demoStages.push(`Dead kirill Udins: ${i}`);
+            }
+            demoStages.push("YUPPY!: 100");
+
             demoStages.forEach((msg, i) => {
-                setTimeout(() => { addLog(msg); }, i * 1400 + 500);
+                setTimeout(() => { addLog(msg); }, i * 150 + 100); // Немного ускорил вывод демо-логов
             });
         }
     </script>
