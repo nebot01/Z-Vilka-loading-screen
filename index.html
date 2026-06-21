@@ -42,7 +42,7 @@
         }
 
         .bg-image.active {
-            opacity: 1; /* Полная яркость для фоновых картинок */
+            opacity: 1;
         }
 
         .main-container {
@@ -55,7 +55,7 @@
 
         .content-box {
             position: absolute;
-            top: 50%;
+            top: 40%; /* Сместили блок выше, освобождая место под массивный список */
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
@@ -81,7 +81,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.75; /* Прозрачность гифки 75% */
+            opacity: 0.75;
         }
 
         .title {
@@ -94,34 +94,38 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
 
+        /* Увеличенный контейнер для вывода глубокой истории */
         .loader-logs {
             position: absolute;
-            top: calc(50% + 140px); 
+            top: calc(40% + 140px); /* Привязка строго под сместившимся контентом */
             left: 50%;
             transform: translateX(-50%);
-            bottom: 20px; 
+            bottom: 15px; 
             width: 100%;
-            max-width: 700px;
+            max-width: 750px;
             display: flex;
             flex-direction: column; 
             align-items: center;
             justify-content: flex-start;
-            overflow-y: hidden;
+            overflow: hidden;
         }
 
         .log-item {
             font-size: 16px;
             font-weight: 500;
             color: #ffffff;
-            margin: 5px 0;
-            transition: all 0.3s ease-in-out;
+            margin: 4px 0; 
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, scale 0.3s ease-in-out;
             transform: translateY(-10px);
             opacity: 0;
             text-align: center;
             max-width: 95%;
+            
+            white-space: normal;
             word-wrap: break-word;
             word-break: break-all;
             text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            flex-shrink: 0;
         }
 
         .log-item.spawn {
@@ -129,11 +133,15 @@
             opacity: 1;
         }
 
-        .log-item:nth-child(2) { opacity: 0.60; transform: scale(0.95); }
-        .log-item:nth-child(3) { opacity: 0.35; transform: scale(0.90); }
-        .log-item:nth-child(4) { opacity: 0.15; transform: scale(0.85); }
-        .log-item:nth-child(5) { opacity: 0.05; transform: scale(0.80); }
-        .log-item:nth-child(n+6) { opacity: 0; transform: scale(0.75); }
+        /* Плавный градиент прозрачности вниз по списку истории */
+        .log-item:nth-child(1) { opacity: 1; transform: scale(1); }
+        .log-item:nth-child(2) { opacity: 0.75; transform: scale(0.98); }
+        .log-item:nth-child(3) { opacity: 0.55; transform: scale(0.96); }
+        .log-item:nth-child(4) { opacity: 0.35; transform: scale(0.94); }
+        .log-item:nth-child(5) { opacity: 0.20; transform: scale(0.92); }
+        .log-item:nth-child(6) { opacity: 0.10; transform: scale(0.90); }
+        .log-item:nth-child(7) { opacity: 0.05; transform: scale(0.88); }
+        .log-item:nth-child(n+8) { opacity: 0.02; transform: scale(0.85); }
     </style>
 </head>
 <body>
@@ -215,7 +223,7 @@
             audioPlayer.play().then(() => {
                 musicStarted = true;
             }).catch(error => {
-                console.log("Ожидание триггера активности для музыки...");
+                console.log("Ожидание активности...");
             });
         }
 
@@ -259,7 +267,8 @@
             logsContainer.insertBefore(logItem, logsContainer.firstChild);
             setTimeout(() => { logItem.classList.add('spawn'); }, 15);
 
-            if (logsContainer.children.length > 12) {
+            // Увеличили лимит удержания истории до 25 элементов, чтобы старые логи не удалялись слишком рано
+            if (logsContainer.children.length > 25) {
                 logsContainer.removeChild(logsContainer.lastChild);
             }
         }
