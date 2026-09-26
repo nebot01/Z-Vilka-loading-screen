@@ -67,7 +67,7 @@
 
         .gif-container {
             width: 240px;
-            height: 180px; 
+            height: 180px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -112,30 +112,26 @@
             left: -50%;
             height: calc(100% - 4px);
             width: 50%;
-            background-color: #d9d9d9; /* чуть темнее белого */
+            background-color: #d9d9d9;
             border-radius: 4px;
             animation: slideBackAndForth 1.1s ease-in-out infinite alternate;
         }
 
         @keyframes slideBackAndForth {
-            0% {
-                left: -50%;
-            }
-            100% {
-                left: 100%;
-            }
+            0%   { left: -50%; }
+            100% { left: 100%; }
         }
 
         .loader-logs {
             position: absolute;
-            top: calc(50% + 140px); 
+            top: calc(50% + 140px);
             left: 50%;
             transform: translateX(-50%);
-            bottom: 20px; 
+            bottom: 20px;
             width: 100%;
             max-width: 700px;
             display: flex;
-            flex-direction: column; 
+            flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             overflow: hidden;
@@ -167,6 +163,25 @@
         .log-item:nth-child(4) { opacity: 0.15; transform: scale(0.85); }
         .log-item:nth-child(5) { opacity: 0.05; transform: scale(0.80); }
         .log-item:nth-child(n+6) { opacity: 0; transform: scale(0.75); }
+
+        /* ===== Подсказка про клик для звука ===== */
+        .sound-hint {
+            position: fixed;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 1px;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            transition: opacity 0.6s ease;
+        }
+
+        .sound-hint.hidden {
+            opacity: 0;
+        }
     </style>
 </head>
 <body>
@@ -174,55 +189,182 @@
     <div class="background-slider" id="bgSlider"></div>
 
     <div class="main-container">
-        
+
         <div class="content-box">
             <div class="gif-container">
-                <img src="https://media.tenor.com/s1eB3aYsAXYAAAAC/ecospace-compostable.gif" alt="Z-Вилка GIF">
+                <img src="ecospace-compostable.gif" alt="Z-Вилка GIF"
+                     onerror="this.style.display='none'">
             </div>
             <h1 class="title">Z-Вилка</h1>
-            <!-- Полоска под названием -->
             <div class="title-underline"></div>
         </div>
 
         <div class="loader-logs" id="logsContainer"></div>
-        
+
     </div>
 
+    <div class="sound-hint" id="soundHint">клик — включить звук</div>
+
     <script>
-        const images = [
-            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920',
-            'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1920',
-            'https://images.unsplash.com/photo-1604871000636-074fa5117945?q=80&w=1920',
-            'https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1920',
-            'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1920'
-        ];
+        /* =========================================================
+           1. АВТОПОИСК АССЕТОВ
+           Проверяем nikker1..nikkerN с расширениями png/jpg/jpeg/webp
+           и mp3/ogg/wav. Используем Image()/Audio() для проверки,
+           какие файлы реально существуют рядом с index.html.
+           ========================================================= */
+
+        const IMG_EXTS  = ['png', 'jpg', 'jpeg', 'webp'];
+        const AUD_EXTS  = ['mp3', 'ogg', 'wav'];
+        const MAX_IMG   = 30;  // максимум nikker1..nikker30
+        const MAX_AUD   = 30;
+
+        // Промис: проверяет, существует ли картинка
+        function probeImage(url) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.onload  = () => resolve(url);
+                img.onerror = () => resolve(null);
+                img.src = url;
+            });
+        }
+
+        // Промис: проверяет, существует ли аудио
+        function probeAudio(url) {
+            return new Promise(resolve => {
+                const a = new Audio();
+                a.preload = 'metadata';
+                a.onloadedmetadata = () => resolve(url);
+                a.onerror = () => resolve(null);
+                a.src = url;
+            });
+        }
+
+        // Ищем первый существующий файл для basename "nikkerN" среди расширений
+        async function findAsset(basename, exts, prober) {
+            for (const ext of exts) {
+                const url = `${basename}.${ext}`;
+                const ok = await prober(url);
+                if (ok) return ok;
+            }
+            return null;
+        }
+
+        // Собираем все nikker1..MAX с любыми расширениями
+        async function collectAssets(prefix, exts, max, prober) {
+            const tasks = [];
+            for (let i = 1; i <= max; i++) {
+                tasks.push(findAsset(`${prefix}${i}`, exts, prober));
+            }
+            const results = await Promise.all(tasks);
+            return results.filter(Boolean);
+        }
+
+        /* =========================================================
+           2. ФОНОВЫЙ СЛАЙДЕР
+           ========================================================= */
 
         const bgSlider = document.getElementById('bgSlider');
-        images.forEach((src, idx) => {
-            const div = document.createElement('div');
-            div.className = `bg-image ${idx === 0 ? 'active' : ''}`;
-            div.style.backgroundImage = `url('${src}')`;
-            bgSlider.appendChild(div);
-        });
+        const bgElements = [];
 
-        const bgElements = document.querySelectorAll('.bg-image');
+        function buildBackgrounds(urls) {
+            // Если локальных картинок нет — используем заглушку-градиент
+            const list = urls.length ? urls : [];
+            if (!list.length) {
+                const div = document.createElement('div');
+                div.className = 'bg-image active';
+                div.style.background = 'radial-gradient(circle at 50% 30%, #222, #000)';
+                bgSlider.appendChild(div);
+                bgElements.push(div);
+                return;
+            }
+            list.forEach((src, idx) => {
+                const div = document.createElement('div');
+                div.className = `bg-image ${idx === 0 ? 'active' : ''}`;
+                div.style.backgroundImage = `url('${src}')`;
+                bgSlider.appendChild(div);
+                bgElements.push(div);
+            });
+        }
+
         let currentImgIndex = 0;
 
-        setInterval(() => {
+        function nextBackground() {
+            if (bgElements.length < 2) return;
             bgElements[currentImgIndex].classList.remove('active');
             let nextIndex = currentImgIndex;
-            while (nextIndex === currentImgIndex && images.length > 1) {
-                nextIndex = Math.floor(Math.random() * images.length);
+            while (nextIndex === currentImgIndex) {
+                nextIndex = Math.floor(Math.random() * bgElements.length);
             }
             currentImgIndex = nextIndex;
             bgElements[currentImgIndex].classList.add('active');
-        }, 5000);
+
+            // Параллельно — случайный трек
+            playRandomSound();
+        }
+
+        /* =========================================================
+           3. ЗВУК
+           ========================================================= */
+
+        const soundHint = document.getElementById('soundHint');
+        let soundUnlocked = false;
+        let soundList = [];
+        let currentAudio = null;
+
+        function playRandomSound() {
+            if (!soundUnlocked || !soundList.length) return;
+
+            // Плавно гасим предыдущий
+            if (currentAudio) {
+                const prev = currentAudio;
+                const fade = setInterval(() => {
+                    if (prev.volume > 0.05) {
+                        prev.volume -= 0.05;
+                    } else {
+                        clearInterval(fade);
+                        prev.pause();
+                    }
+                }, 40);
+            }
+
+            const url = soundList[Math.floor(Math.random() * soundList.length)];
+            const a = new Audio(url);
+            a.volume = 0;
+            a.play().then(() => {
+                // Плавно поднимаем громкость
+                const fade = setInterval(() => {
+                    if (a.volume < 0.55) {
+                        a.volume = Math.min(0.55, a.volume + 0.05);
+                    } else {
+                        clearInterval(fade);
+                    }
+                }, 40);
+            }).catch(() => { /* браузер может блокировать */ });
+
+            currentAudio = a;
+        }
+
+        function unlockSound() {
+            if (soundUnlocked) return;
+            soundUnlocked = true;
+            soundHint.classList.add('hidden');
+            // Пробуем сразу запустить первый трек
+            playRandomSound();
+        }
+
+        document.body.addEventListener('click',      unlockSound, { once: true });
+        document.body.addEventListener('touchstart', unlockSound, { once: true });
+        document.body.addEventListener('keydown',    unlockSound, { once: true });
+
+        /* =========================================================
+           4. ЛОГИ ЗАГРУЗКИ
+           ========================================================= */
 
         const logsContainer = document.getElementById('logsContainer');
         let lastLogText = "";
 
         function addLog(text) {
-            if (!text || text === lastLogText) return; 
+            if (!text || text === lastLogText) return;
             lastLogText = text;
 
             const logItem = document.createElement('div');
@@ -239,37 +381,59 @@
         }
 
         function SetStatusChanged(status) {
-            if(status) addLog(status);
+            if (status) addLog(status);
         }
-
         function DownloadingFile(fileName) {
-            let cleanName = fileName.replace(/["']/g, "");
+            let cleanName = String(fileName).replace(/["']/g, "");
             addLog("Downloading: " + cleanName);
         }
-
         function SetFilesRemaining(needed) {
-            if (needed > 0) {
-                addLog("Files remaining: " + needed);
-            }
+            if (needed > 0) addLog("Files remaining: " + needed);
         }
 
-        if (!navigator.userAgent.includes("Valve")) {
-            const demoStages = [
-                "Connecting to Z-Вилка...",
-                "Answering challenge...",
-                "Mounting Workshop Addons...",
-                "Downloading: models/weapons/w_rif_m4a1.mdl",
-                "Downloading: sound/ambient/ambient_background.wav",
-                "Workshop Addons Complete!",
-                "Starting Lua Engine...",
-                "Garry's Mod Client Initialized.",
-                "Sending client info...",
-                "Spawning entity data..."
-            ];
-            demoStages.forEach((msg, i) => {
-                setTimeout(() => { addLog(msg); }, i * 1400 + 500);
-            });
-        }
+        /* =========================================================
+           5. СТАРТ
+           ========================================================= */
+
+        (async function init() {
+            addLog("Scanning local assets...");
+
+            const [images, sounds] = await Promise.all([
+                collectAssets('nikker', IMG_EXTS, MAX_IMG, probeImage),
+                collectAssets('nikker', AUD_EXTS, MAX_AUD, probeAudio)
+            ]);
+
+            soundList = sounds;
+
+            addLog(`Found images: ${images.length}`);
+            addLog(`Found sounds: ${sounds.length}`);
+
+            buildBackgrounds(images);
+
+            // Авто-смена фона каждые 5 секунд
+            if (bgElements.length > 1) {
+                setInterval(nextBackground, 5000);
+            }
+
+            // Демо-логи, если это не сам Garry's Mod
+            if (!navigator.userAgent.includes("Valve")) {
+                const demoStages = [
+                    "Connecting to Z-Вилка...",
+                    "Answering challenge...",
+                    "Mounting Workshop Addons...",
+                    "Downloading: models/weapons/w_rif_m4a1.mdl",
+                    "Downloading: sound/ambient/ambient_background.wav",
+                    "Workshop Addons Complete!",
+                    "Starting Lua Engine...",
+                    "Garry's Mod Client Initialized.",
+                    "Sending client info...",
+                    "Spawning entity data..."
+                ];
+                demoStages.forEach((msg, i) => {
+                    setTimeout(() => addLog(msg), i * 1400 + 500);
+                });
+            }
+        })();
     </script>
 </body>
 </html>
